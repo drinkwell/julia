@@ -219,10 +219,15 @@ STATIC_INLINE int JL_CONST_FUNC jl_gc_szclass(size_t sz, size_t alignment)
 #  define jl_is_constexpr(e) (0)
 #endif
 
+#define jl_buff_tag ((uintptr_t)0x4eade800)
+
 STATIC_INLINE jl_value_t *jl_gc_alloc_(jl_ptls_t ptls, size_t sz, void *ty)
 {
     const size_t allocsz = sz + sizeof(jl_taggedvalue_t);
-    const size_t alignment = jl_datatype_align(ty);
+    size_t alignment = JL_SMALL_BYTE_ALIGNMENT;
+    if (ty && ((uintptr_t)ty != jl_buff_tag) &&
+        jl_is_datatype(ty) && ((jl_datatype_t*)ty)->layout)
+        alignment = jl_datatype_align(ty);
     if (allocsz < sz) // overflow in adding offs, size was "negative"
         jl_throw(jl_memory_exception);
     jl_value_t *v;
@@ -254,7 +259,6 @@ JL_DLLEXPORT jl_value_t *jl_gc_alloc(jl_ptls_t ptls, size_t sz, void *ty);
 #  define jl_gc_alloc(ptls, sz, ty) jl_gc_alloc_(ptls, sz, ty)
 #endif
 
-#define jl_buff_tag ((uintptr_t)0x4eade800)
 STATIC_INLINE void *jl_gc_alloc_buf(jl_ptls_t ptls, size_t sz)
 {
     return jl_gc_alloc(ptls, sz, (void*)jl_buff_tag);
