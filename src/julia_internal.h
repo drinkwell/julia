@@ -134,6 +134,10 @@ void *jl_gc_perm_alloc(size_t sz, int zero);
 
 JL_DLLEXPORT int jl_alignment(void* ty);
 
+#define JL_SMALL_BYTE_ALIGNMENT 16
+#define JL_CACHE_BYTE_ALIGNMENT 64
+#define GC_MAX_SZCLASS (2032-sizeof(void*))
+
 // pools are 16376 bytes large (GC_POOL_SZ - GC_PAGE_OFFSET)
 static const int jl_gc_sizeclasses[JL_GC_N_POOLS] = {
 #ifdef _P64
@@ -177,14 +181,16 @@ STATIC_INLINE int JL_CONST_FUNC jl_gc_szclass(size_t sz, size_t alignment)
     // select a bucket with the correct alignment, by setting
     // sz to a multiple of the alignment. sz = 48, alignment 32
     // turns into sz = 64
+    // TODO: make sure that objects that are just at the border of the max pool size are handled correctly.
     if (sz < alignment)
         sz = alignment;
     else if (sz > alignment) {
-        size_t algined_sz = alignment;
+        size_t aligned_sz = alignment;
         while (aligned_sz < sz)
-            aligned_sz + alignemnt;
+            aligned_sz += alignment;
         sz = aligned_sz;
     }
+    assert(sz <= GC_MAX_SZCLASS + sizeof(jl_taggedvalue_t));
 #ifdef _P64
     if (sz <=    8)
         return 0;
@@ -212,9 +218,6 @@ STATIC_INLINE int JL_CONST_FUNC jl_gc_szclass(size_t sz, size_t alignment)
 #else
 #  define jl_is_constexpr(e) (0)
 #endif
-#define JL_SMALL_BYTE_ALIGNMENT 16
-#define JL_CACHE_BYTE_ALIGNMENT 64
-#define GC_MAX_SZCLASS (2032-sizeof(void*))
 
 STATIC_INLINE jl_value_t *jl_gc_alloc_(jl_ptls_t ptls, size_t sz, void *ty)
 {
