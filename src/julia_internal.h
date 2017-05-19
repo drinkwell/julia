@@ -132,6 +132,8 @@ extern jl_mutex_t gc_perm_lock;
 void *jl_gc_perm_alloc_nolock(size_t sz, int zero);
 void *jl_gc_perm_alloc(size_t sz, int zero);
 
+JL_DLLEXPORT int jl_alignment(void* ty);
+
 // pools are 16376 bytes large (GC_POOL_SZ - GC_PAGE_OFFSET)
 static const int jl_gc_sizeclasses[JL_GC_N_POOLS] = {
 #ifdef _P64
@@ -170,10 +172,19 @@ static const int jl_gc_sizeclasses[JL_GC_N_POOLS] = {
 //    64,   32,  160,   64,   16,   64,  112,  128, bytes lost
 };
 
-JL_DLLEXPORT int jl_alignment(void* ty);
-
 STATIC_INLINE int JL_CONST_FUNC jl_gc_szclass(size_t sz, size_t alignment)
 {
+    // select a bucket with the correct alignment, by setting
+    // sz to a multiple of the alignment. sz = 48, alignment 32
+    // turns into sz = 64
+    if (sz < alignment)
+        sz = alignment;
+    else if (sz > alignment) {
+        size_t algined_sz = alignment;
+        while (aligned_sz < sz)
+            aligned_sz + alignemnt;
+        sz = aligned_sz;
+    }
 #ifdef _P64
     if (sz <=    8)
         return 0;
