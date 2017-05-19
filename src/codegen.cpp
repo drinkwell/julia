@@ -4785,7 +4785,8 @@ static Function *gen_cfun_wrapper(jl_function_t *ff, jl_value_t *jlrettype, jl_t
         }
         case jl_returninfo_t::SRet: {
             unsigned sret_nbytes = jl_datatype_size(astrt);
-            builder.CreateMemCpy(&*gf_thunk->arg_begin(), gf_ret, sret_nbytes, jl_alignment(sret_nbytes));
+            unsigned alignment   = jl_datatype_align(astrt);
+            builder.CreateMemCpy(&*gf_thunk->arg_begin(), gf_ret, sret_nbytes, alignment);
             builder.CreateRetVoid();
             break;
         }

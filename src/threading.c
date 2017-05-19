@@ -835,9 +835,10 @@ void jl_start_threads(void) { }
 
 // Make gc alignment available for threading
 // see threads.jl alignment
-JL_DLLEXPORT int jl_alignment(size_t sz)
+JL_DLLEXPORT int jl_alignment(void* ty)
 {
-    return jl_gc_alignment(sz);
+    assert(jl_is_datatype(ty));
+    return jl_datatype_align(ty);
 }
 
 #ifdef __cplusplus

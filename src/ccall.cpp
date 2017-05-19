@@ -2152,7 +2152,6 @@ jl_cgval_t function_sig_t::emit_a_ccall(
                 size_t alignment = jl_datatype_align(rt);
                 assert(rtsz > 0);
                 Value *strct = emit_allocobj(ctx, rtsz, alignment, runtime_bt);
-                int boxalign = jl_gc_alignment(rtsz);
 #ifndef JL_NDEBUG
 #if JL_LLVM_VERSION >= 30600
                 const DataLayout &DL = jl_ExecutionEngine->getDataLayout();
@@ -2162,11 +2161,11 @@ jl_cgval_t function_sig_t::emit_a_ccall(
                 // ARM and AArch64 can use a LLVM type larger than the julia
                 // type. However, the LLVM type size should be no larger than
                 // the GC allocation size. (multiple of `sizeof(void*)`)
-                assert(DL.getTypeStoreSize(lrt) <= LLT_ALIGN(rtsz, boxalign));
+                assert(DL.getTypeStoreSize(lrt) <= LLT_ALIGN(rtsz, alignment));
 #endif
                 // copy the data from the return value to the new struct
                 MDNode *tbaa = jl_is_mutable(rt) ? tbaa_mutab : tbaa_immut;
-                init_bits_value(strct, result, tbaa, boxalign);
+                init_bits_value(strct, result, tbaa, alignment);
                 return mark_julia_type(strct, true, rt, ctx);
             }
             jlretboxed = false; // trigger mark_or_box_ccall_result to build the runtime box
