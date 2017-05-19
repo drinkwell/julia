@@ -775,6 +775,7 @@ STATIC_INLINE void jl_array_uint8_set(void *a, size_t i, uint8_t x)
 #define jl_datatype_size(t)    (((jl_datatype_t*)t)->size)
 #define jl_datatype_nbits(t)   ((((jl_datatype_t*)t)->size)*8)
 #define jl_datatype_nfields(t) (((jl_datatype_t*)(t))->layout->nfields)
+#define jl_datatype_align(t)   (((jl_datatype_t*)t)->layout->alignment)
 
 // inline version with strong type check to detect typos in a `->name` chain
 STATIC_INLINE char *jl_symbol_name_(jl_sym_t *s)

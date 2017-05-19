@@ -1214,8 +1214,9 @@ static jl_cgval_t mark_or_box_ccall_result(Value *result, bool isboxed, jl_value
         const DataLayout &DL = *jl_ExecutionEngine->getDataLayout();
 #endif
         unsigned nb = DL.getTypeStoreSize(result->getType());
+        unsigned alignment = DL.getPrefTypeAlignment(result->getType());
         MDNode *tbaa = jl_is_mutable(rt) ? tbaa_mutab : tbaa_immut;
-        Value *strct = emit_allocobj(ctx, nb, runtime_dt);
+        Value *strct = emit_allocobj(ctx, nb, alignment, runtime_dt);
         init_bits_value(strct, result, tbaa);
         return mark_julia_type(strct, true, rt, ctx);
     }
@@ -2001,7 +2002,7 @@ jl_cgval_t function_sig_t::emit_a_ccall(
         else {
             // XXX: result needs to be zero'd and given a GC root here
             assert(jl_datatype_size(rt) > 0 && "sret shouldn't be a singleton instance");
-            result = emit_allocobj(ctx, jl_datatype_size(rt),
+            result = emit_allocobj(ctx, jl_datatype_size(rt), jl_datatype_align(rt),
                                    literal_pointer_val((jl_value_t*)rt));
             sretboxed = true;
         }
@@ -2148,8 +2149,9 @@ jl_cgval_t function_sig_t::emit_a_ccall(
             if (static_rt) {
                 Value *runtime_bt = literal_pointer_val(rt);
                 size_t rtsz = jl_datatype_size(rt);
+                size_t alignment = jl_datatype_align(rt);
                 assert(rtsz > 0);
-                Value *strct = emit_allocobj(ctx, rtsz, runtime_bt);
+                Value *strct = emit_allocobj(ctx, rtsz, alignment, runtime_bt);
                 int boxalign = jl_gc_alignment(rtsz);
 #ifndef JL_NDEBUG
 #if JL_LLVM_VERSION >= 30600

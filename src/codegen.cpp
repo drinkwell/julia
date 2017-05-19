@@ -4523,7 +4523,7 @@ static Function *gen_cfun_wrapper(jl_function_t *ff, jl_value_t *jlrettype, jl_t
                 (void)julia_type_to_llvm(jargty, &isboxed);
                 if (isboxed) {
                     // passed an unboxed T, but want something boxed
-                    Value *mem = emit_allocobj(&ctx, jl_datatype_size(jargty),
+                    Value *mem = emit_allocobj(&ctx, jl_datatype_size(jargty), jl_datatype_align(jargty),
                                                literal_pointer_val((jl_value_t*)jargty));
                     tbaa_decorate(jl_is_mutable(jargty) ? tbaa_mutab : tbaa_immut,
                                   builder.CreateAlignedStore(val,

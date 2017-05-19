@@ -965,12 +965,12 @@ JL_DLLEXPORT jl_value_t *jl_gc_pool_alloc(jl_ptls_t ptls, int pool_offset,
     return jl_valueof(v);
 }
 
-int jl_gc_classify_pools(size_t sz, int *osize)
+int jl_gc_classify_pools(size_t sz, size_t alignment, int *osize)
 {
     if (sz > GC_MAX_SZCLASS)
         return -1;
     size_t allocsz = sz + sizeof(jl_taggedvalue_t);
-    int klass = jl_gc_szclass(allocsz);
+    int klass = jl_gc_szclass(allocsz, alignment);
     *osize = jl_gc_sizeclasses[klass];
     return (int)(intptr_t)(&((jl_ptls_t)0)->heap.norm_pools[klass]);
 }

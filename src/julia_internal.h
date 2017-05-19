@@ -127,7 +127,7 @@ JL_DLLEXPORT extern const char *jl_filename;
 JL_DLLEXPORT jl_value_t *jl_gc_pool_alloc(jl_ptls_t ptls, int pool_offset,
                                           int osize);
 JL_DLLEXPORT jl_value_t *jl_gc_big_alloc(jl_ptls_t ptls, size_t allocsz);
-int jl_gc_classify_pools(size_t sz, int *osize);
+int jl_gc_classify_pools(size_t sz, size_t alignment, int *osize);
 extern jl_mutex_t gc_perm_lock;
 void *jl_gc_perm_alloc_nolock(size_t sz, int zero);
 void *jl_gc_perm_alloc(size_t sz, int zero);
@@ -192,7 +192,7 @@ STATIC_INLINE int jl_gc_alignment(size_t sz)
 }
 JL_DLLEXPORT int jl_alignment(size_t sz);
 
-STATIC_INLINE int JL_CONST_FUNC jl_gc_szclass(size_t sz)
+STATIC_INLINE int JL_CONST_FUNC jl_gc_szclass(size_t sz, size_t alignment)
 {
 #ifdef _P64
     if (sz <=    8)
@@ -228,11 +228,12 @@ STATIC_INLINE int JL_CONST_FUNC jl_gc_szclass(size_t sz)
 STATIC_INLINE jl_value_t *jl_gc_alloc_(jl_ptls_t ptls, size_t sz, void *ty)
 {
     const size_t allocsz = sz + sizeof(jl_taggedvalue_t);
+    const size_t alignment = jl_datatype_align(ty);
     if (allocsz < sz) // overflow in adding offs, size was "negative"
         jl_throw(jl_memory_exception);
     jl_value_t *v;
     if (allocsz <= GC_MAX_SZCLASS + sizeof(jl_taggedvalue_t)) {
-        int pool_id = jl_gc_szclass(allocsz);
+        int pool_id = jl_gc_szclass(allocsz, alignment);
         jl_gc_pool_t *p = &ptls->heap.norm_pools[pool_id];
         int osize;
         if (jl_is_constexpr(allocsz)) {
