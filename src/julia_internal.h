@@ -132,8 +132,6 @@ extern jl_mutex_t gc_perm_lock;
 void *jl_gc_perm_alloc_nolock(size_t sz, int zero);
 void *jl_gc_perm_alloc(size_t sz, int zero);
 
-JL_DLLEXPORT int jl_alignment(void* ty);
-
 #define JL_SMALL_BYTE_ALIGNMENT 16
 #define JL_CACHE_BYTE_ALIGNMENT 64
 #define GC_MAX_SZCLASS (2032-sizeof(void*))
