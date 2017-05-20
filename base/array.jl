@@ -320,6 +320,7 @@ oneunit(x::AbstractMatrix{T}) where {T} = _one(oneunit(T), x)
 
 convert(::Type{Vector}, x::AbstractVector{T}) where {T} = convert(Vector{T}, x)
 convert(::Type{Matrix}, x::AbstractMatrix{T}) where {T} = convert(Matrix{T}, x)
+convert(::Type{Matrix}, x::Vector) = Matrix(reshape(x, :, 1))
 
 convert(::Type{Array{T}}, x::Array{T,n}) where {T,n} = x
 convert(::Type{Array{T,n}}, x::Array{T,n}) where {T,n} = x

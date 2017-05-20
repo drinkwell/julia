@@ -191,6 +191,13 @@ end
     @test convert(Vector{Float64}, b) == b
 end
 
+@testset "conversion from Vector/RowVector to Matrix (#21977)" begin
+    a = Vector([1, 2, 3])
+    am = Matrix([1; 2; 3])
+    @test convert(Matrix, a) == am
+    @test convert(Matrix, a') == am'
+end
+
 @testset "operations with IndexLinear ReshapedArray" begin
     b = collect(1:12)
     a = Base.ReshapedArray(b, (4,3), ())

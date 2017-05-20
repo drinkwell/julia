@@ -44,6 +44,9 @@ const ConjRowVector{T,CV<:ConjVector} = RowVector{T,CV}
     RowVector{T}(Vector{transpose_type(T)}(n[2])) :
     error("RowVector expects 1×N size, got $n")
 
+# Convenience constructor to Matrix
+convert(::Type{Matrix}, x::RowVector) = Matrix(reshape(x, 1, :))
+
 # Conversion of underlying storage
 convert(::Type{RowVector{T,V}}, rowvec::RowVector) where {T,V<:AbstractVector} =
     RowVector{T,V}(convert(V,rowvec.vec))
