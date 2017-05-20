@@ -221,18 +221,13 @@ STATIC_INLINE int JL_CONST_FUNC jl_gc_szclass(size_t sz)
 #  define jl_is_constexpr(e) (0)
 #endif
 
-#define jl_buff_tag ((uintptr_t)0x4eade800)
-
-STATIC_INLINE jl_value_t *jl_gc_alloc_(jl_ptls_t ptls, size_t sz, void *ty)
+STATIC_INLINE jl_value_t *jl_gc_alloc_(jl_ptls_t ptls, size_t sz, size_t alignment, void *ty)
 {
     const size_t allocsz = sz + sizeof(jl_taggedvalue_t);
     if (allocsz < sz) // overflow in adding offs, size was "negative"
         jl_throw(jl_memory_exception);
-    size_t alignment = JL_SMALL_BYTE_ALIGNMENT;
-    if (ty && ((uintptr_t)ty != jl_buff_tag) &&
-        jl_is_datatype(ty) && ((jl_datatype_t*)ty)->layout)
-        alignment = jl_datatype_align(ty);
     const size_t alignsz = jl_gc_alignsz(allocsz, alignment);
+    assert(alignsz >= allocsz);
     jl_value_t *v;
     if (alignsz <= GC_MAX_SZCLASS + sizeof(jl_taggedvalue_t)) {
         int pool_id = jl_gc_szclass(alignsz);
@@ -252,19 +247,21 @@ STATIC_INLINE jl_value_t *jl_gc_alloc_(jl_ptls_t ptls, size_t sz, void *ty)
     jl_set_typeof(v, ty);
     return v;
 }
-JL_DLLEXPORT jl_value_t *jl_gc_alloc(jl_ptls_t ptls, size_t sz, void *ty);
-// On GCC, only inline when sz is constant
+JL_DLLEXPORT jl_value_t *jl_gc_alloc(jl_ptls_t ptls, size_t sz, size_t alignment, void *ty);
+// On GCC, only inline when sz and alignment is constant
 #ifdef __GNUC__
-#  define jl_gc_alloc(ptls, sz, ty)                             \
-    (__builtin_constant_p(sz) ? jl_gc_alloc_(ptls, sz, ty) :    \
-     (jl_gc_alloc)(ptls, sz, ty))
+#  define jl_gc_alloc(ptls, sz, alignment, ty)                     \
+    (__builtin_constant_p(sz) && __builtin_constant_p(alignment) ? \
+      jl_gc_alloc_(ptls, sz, alignment, ty) :                      \
+      (jl_gc_alloc)(ptls, sz, alignment, ty))
 #else
-#  define jl_gc_alloc(ptls, sz, ty) jl_gc_alloc_(ptls, sz, ty)
+#  define jl_gc_alloc(ptls, sz, align, ty) jl_gc_alloc_(ptls, sz, align, ty)
 #endif
 
+#define jl_buff_tag ((uintptr_t)0x4eade800)
 STATIC_INLINE void *jl_gc_alloc_buf(jl_ptls_t ptls, size_t sz)
 {
-    return jl_gc_alloc(ptls, sz, (void*)jl_buff_tag);
+    return jl_gc_alloc(ptls, sz, 0, (void*)jl_buff_tag);
 }
 
 STATIC_INLINE jl_value_t *jl_gc_permobj(size_t sz, void *ty)
