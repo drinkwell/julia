@@ -99,14 +99,14 @@ function show(io::IO, cmd::Cmd)
     print_env = cmd.env !== nothing
     print_dir = !isempty(cmd.dir)
     (print_env || print_dir) && print(io, "setenv(")
-    esc = shell_escape(cmd, special=shell_special)
     print(io, '`')
-    for c in esc
-        if c == '`'
-            print(io, '\\')
-        end
-        print(io, c)
-    end
+    print(io, join(map(cmd.exec) do arg
+        replace(sprint() do io
+            with_output_color(:underline, io) do io
+                print_shell_word(io, arg, shell_special)
+            end
+        end, '`', "\\`")
+    end, ' '))
     print(io, '`')
     print_env && (print(io, ","); show(io, cmd.env))
     print_dir && (print(io, "; dir="); show(io, cmd.dir))
@@ -824,3 +824,11 @@ wait(x::Process)      = if !process_exited(x); stream_wait(x, x.exitnotify); end
 wait(x::ProcessChain) = for p in x.processes; wait(p); end
 
 show(io::IO, p::Process) = print(io, "Process(", p.cmd, ", ", process_status(p), ")")
+
+# allow the elements of the Cmd to be accessed as an array or iterator
+for f in (:length, :endof, :start, :eachindex, :eltype, :first, :last)
+    @eval $f(cmd::Cmd) = $f(cmd.exec)
+end
+for f in (:next, :done, :getindex)
+    @eval $f(cmd::Cmd, i) = $f(cmd.exec, i)
+end

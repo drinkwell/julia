@@ -475,6 +475,12 @@ end
 let seed = rand(UInt32, 10)
     r = MersenneTwister(seed)
     @test r.seed == seed && r.seed !== seed
+    # RNGs do not share their seed in randjump
+    let rs = randjump(r, 2)
+        @test  rs[1].seed !== rs[2].seed
+        srand(rs[2])
+        @test seed == rs[1].seed != rs[2].seed
+    end
     resize!(seed, 4)
     @test r.seed != seed
 end
@@ -485,11 +491,8 @@ let g = Base.Random.GLOBAL_RNG,
     @test srand() === g
     @test srand(rand(UInt)) === g
     @test srand(rand(UInt32, rand(1:10))) === g
-    @test srand(@__FILE__) === g
-    @test srand(@__FILE__, rand(1:10)) === g
     @test srand(m) === m
     @test srand(m, rand(UInt)) === m
     @test srand(m, rand(UInt32, rand(1:10))) === m
     @test srand(m, rand(1:10)) === m
-    @test srand(m, @__FILE__, rand(1:10)) === m
 end

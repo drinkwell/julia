@@ -1335,6 +1335,13 @@ next(p::Union{Process, ProcessChain}, i::Int) = (getindex(p, i), i + 1)
     return i == 1 ? getfield(p, p.openstream) : p
 end
 
+@deprecate cond(F::LinAlg.LU, p::Integer) cond(full(F), p)
+
+# PR #21359
+@deprecate srand(r::MersenneTwister, filename::AbstractString, n::Integer=4) srand(r, read!(filename, Array{UInt32}(Int(n))))
+@deprecate srand(filename::AbstractString, n::Integer=4) srand(read!(filename, Array{UInt32}(Int(n))))
+@deprecate MersenneTwister(filename::AbstractString)  srand(MersenneTwister(0), read!(filename, Array{UInt32}(Int(4))))
+
 # #21709
 @deprecate cov(x::AbstractVector, corrected::Bool) cov(x, corrected=corrected)
 @deprecate cov(x::AbstractMatrix, vardim::Int, corrected::Bool) cov(x, corrected=corrected)

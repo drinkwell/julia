@@ -674,6 +674,10 @@ end
 # error throwing branch from #10560
 @test_throws ArgumentError Base.tryparse_internal(Bool, "foo", 1, 2, 10, true)
 
+@test tryparse(Float64, "1.23") === Nullable(1.23)
+@test tryparse(Float32, "1.23") === Nullable(1.23f0)
+@test tryparse(Float16, "1.23") === Nullable(Float16(1.23))
+
 # PR #17393
 for op in (:.==, :.&, :.|, :.≤)
     @test parse("a $op b") == Expr(:call, op, :a, :b)
@@ -1145,6 +1149,10 @@ f21586(; @m21586(a), @m21586(b)) = a + b
 end
 @test Test21604.X(1.0) === Test21604.X(1.0)
 
+# issue #20575
+@test_throws ParseError parse("\"a\"x")
+@test_throws ParseError parse("\"a\"begin end")
+
 # comment 298107224 on pull #21607
 module Test21607
     using Base.Test
@@ -1183,3 +1191,7 @@ module Test21607
         x
     end === 1.0
 end
+
+# issue #16937
+@test expand(:(f(2, a=1, w=3, c=3, w=4, b=2))) == Expr(:error,
+                                                       "keyword argument \"w\" repeated in call to \"f\"")
